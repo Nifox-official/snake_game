@@ -22,8 +22,7 @@ class Snake(GameSprite):
         self.speed=25
         self.direction='0'
         self.cur_image=self.image
-
-
+        self.wait = 10
     def update(self):
         if self.direction == 'l':
             self.rect.x -= self.speed
@@ -33,7 +32,7 @@ class Snake(GameSprite):
             self.rect.y -= self.speed
         elif self.direction == 'd':
             self.rect.y += self.speed
-
+    def get_direction(self):
         keys = key.get_pressed()
         if keys[K_LEFT] and self.direction != 'r':
             self.direction = 'l'
@@ -79,12 +78,12 @@ class Food(GameSprite):
         self.image = choice(self.costumes)
 
     def position(self):
-        self.rect.x=randint(0,700-self.rect.width)
-        self.rect.y=randint(0,500-self.rect.width)
+        self.rect.x=int(randint(0,700-self.rect.width)/25)*25
+        self.rect.y=int(randint(0,500-self.rect.width)/25)*25
         self.rand_costumes()        
 
 clock = time.Clock()
-FPS=5
+FPS=60
 head=Snake('snake.png',350,250,25,25,0)
 speed=1
 food=Food(['apple.png','arbuz.png','orange.png'], -100,-100,25,25)
@@ -92,7 +91,10 @@ tail=Snake('tail.png', 350,275,25,25,0)
 snake=[head,tail]
 food.position()
 game=True
-
+global_wait=0
+font.init()
+font1=font.SysFont('Arial',30)
+score=0
 
 while game:
     for e in event.get():
@@ -100,17 +102,31 @@ while game:
                 game = False
 
     window.fill((0,102,160))
-    head.update()
+    head.get_direction()
+    if global_wait==0:
+        global_wait=head.wait
+        for e in range(len(snake)-1,0,-1):
+            snake[e].direction=snake[e-1].direction
+            snake[e].set_direct()
+            snake[e].rect.x=snake[e-1].rect.x
+            snake[e].rect.y=snake[e-1].rect.y
+        head.update()
+    else:
+        global_wait-=1
     head.reset()
     food.reset()
+    for s in snake:
+        s.reset()
     if head.rect.colliderect(food):
         head.eat(food)
-    for e in range(1,len(snake)):
-        snake[e].reset()
-        snake[e].direction=snake[e-1].direction
-        snake[e].set_direct()
-        snake[e].rect.x=snake[e-1].rect.x
-        snake[e].rect.y=snake[e-1].rect.y
+        s=Snake('tail.png', head.rect.x, head.rect.y,25,25,0)
+        if speed%5==0:
+            head.wait-=1
+        snake.insert(1,s)
+        if speed %2==0:
+            head.wait-=2
+        if head.wait<2:s
+            head.wait=2
 
 
 
@@ -118,8 +134,7 @@ while game:
 
 
 
-
-
-
+    score_text=font1.render('Счёт: '+str(speed),1,(0,0,0))
+    window.blit(score_text,(10,10))
     display.update()
     clock.tick(FPS)
